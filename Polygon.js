@@ -28,12 +28,22 @@ export default class Polygon {
 
         for (let i = 0; i < points1.length; i++) {
             const point1 = points1[i];
-            const point2 = points1[i + 1] || points1[0];
+            const point2 = points1[(i + 1) % points1.length];
+
+            const edge = {
+                x: point2.x - point1.x,
+                y: point2.y - point1.y
+            };
 
             const normal = {
-                x: point2.y - point1.y,
-                y: point1.x - point2.x
+                x: -edge.y,
+                y: edge.x
             };
+
+            // Normalize the normal vector
+            const length = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
+            normal.x /= length;
+            normal.y /= length;
 
             let min1 = Infinity;
             let max1 = -Infinity;
@@ -64,7 +74,62 @@ export default class Polygon {
             }
         }
 
-        return true;
+        for (let i = 0; i < points1.length; i++) {
+            if (Polygon.pointIsInPolygon(points1[i].x, points1[i].y, polygon2)) {
+                return true;
+            }
+        }
+
+        for (let i = 0; i < points2.length; i++) {
+            if (Polygon.pointIsInPolygon(points2[i].x, points2[i].y, polygon1)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a point is in a polygon
+     * @param {Number} x The x position of the point
+     * @param {Number} y The y position of the point
+     * @param {Polygon | {points:{x:Number,y:Number}}} polygon The polygon to check if the point is in
+     */
+    static pointIsInPolygon(x, y, polygon) {
+        const points = polygon.points;
+
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const xi = points[i].x;
+            const yi = points[i].y;
+            const xj = points[j].x;
+            const yj = points[j].y;
+
+            if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+                inside = !inside;
+            }
+        }
+
+        return inside;
+    }
+
+    /**
+     * Checks if a circle is in a polygon
+     * @param {Number} x The x position of the circle
+     * @param {Number} y The y position of the circle
+     * @param {Number} radius The radius of the circle
+     * @param {Polygon | {points:{x:Number,y:Number}}} polygon The polygon to check if the circle is in
+     * @returns {Boolean} Whether or not the circle is in the polygon
+     */
+    static circleIsInPolygon(x, y, radius, polygon) {
+        for (let i = 0; i < 8; i++) {
+            const angle = i * Math.PI / 4;
+            if (Polygon.pointIsInPolygon(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius, polygon)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
